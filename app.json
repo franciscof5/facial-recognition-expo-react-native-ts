@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "D7.LF",
+    "name": "TRC Facial",
     "slug": "facialrecognition",
     "version": "1.0.2",
     "orientation": "portrait",
@@ -21,11 +21,11 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.douglastx007.facialrecognition"
+      "package": "com.trcmobile.facialrecognition"
     },
     "extra": {
       "eas": {
-        "projectId": "46ad82fb-9917-4ea6-8b33-3bd0315c4677"
+        "projectId": "552b5119-5c96-49a2-9815-26532f0e577a"
       }
     }
   }

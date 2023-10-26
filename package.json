@@ -17,7 +17,10 @@
     "expo-face-detector": "~12.2.0",
     "react-native-reanimated": "~3.3.0",
     "expo-speech": "~11.3.0",
-    "expo-image-picker": "~14.3.2"
+    "expo-image-picker": "~14.3.2",
+    "react-native-web": "~0.19.6",
+    "react-dom": "18.2.0",
+    "@expo/webpack-config": "^19.0.0"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
