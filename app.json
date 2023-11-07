@@ -6,6 +6,10 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "runtimeVersion": "2.26.2",
+    "jscLauncher": {
+      "jse": true
+    },
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
