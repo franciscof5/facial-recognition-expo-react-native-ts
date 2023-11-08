@@ -4,6 +4,8 @@ import { Camera, CameraType, FaceDetectionResult } from "expo-camera";
 import * as FaceDetector from "expo-face-detector";
 import * as ImagePicker from "expo-image-picker";
 import * as FileSystem from "expo-file-system";
+import axios from "axios";
+import FormData from "form-data";
 
 import Animated, {
 	useSharedValue,
@@ -159,26 +161,36 @@ export function Home({
 		const uri = `${faceDir}/image.jpg`;
 		let formData = new FormData();
 		let localUri = uri;
-		let filename = localUri.split("/").pop() || "image.jpg";
+		let filename = localUri.split("/").pop();
 
 		// Infer the type of the image
-		let match = /\.(\w+)$/.exec(filename);
+		let match = /\.(\w+)$/.exec(filename || "");
 		let type = match ? `image/${match[1]}` : `image`;
 
-		// Assume "photo" is the name of the form field the server expects
-		formData.append("photo", {
+		// Assume "file" is the name of the form field the server expects
+		formData.append("file", {
 			uri: localUri,
-			name: filename,
-			type: type,
-		} as any);
-
-		return fetch("http://192.168.0.10:7000/upload", {
-			method: "POST",
-			body: formData,
-			headers: {
-				"content-type": "multipart/form-data",
-			},
+			name: filename || "image.jpg",
+			type,
 		});
+
+		const options = {
+			method: "POST",
+			url: "http://192.168.0.10:7000/upload",
+			headers: {
+				"Content-Type":
+					"multipart/form-data; boundary=---011000010111000001101001",
+				"User-Agent": "axios",
+			},
+			data: formData,
+		};
+
+		try {
+			const response = await axios(options);
+			console.log(response.data);
+		} catch (error) {
+			console.error(error);
+		}
 	}
 	useEffect(() => {
 		requestPermission();
