@@ -2,15 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Camera } from 'expo-camera';
 import * as FaceDetector from 'expo-face-detector';
+import { ColorSpace } from 'react-native-reanimated';
 
 const FaceCapture = () => {
-  const [hasPermission, setHasPermission] = useState(null);
-  const [type, setType] = useState(Camera.Constants.Type.front);
+  const [hasPermission, setHasPermission] = useState<any>(null);
+  const [type, setType] = useState(Camera.Constants.Type);
   const [faceDetected, setFaceDetected] = useState(false);
 
-  const handleFaceDetect = ({ faces }) => {
-    //console.log(faces);
+  const handleFaceDetect = ({ faces }: { faces: { [key: string]: any }[] }) => {
     if (faces.length > 0) {
+      console.log('face detected', faces);
       setFaceDetected(true);
       
       //Camera.takePictureAsync().then(onPictureSaved);
@@ -19,6 +20,7 @@ const FaceCapture = () => {
       //  console.log(uri);
       //}
     } else {
+      console.log('no face detected');
       setFaceDetected(false);
     }
   };
