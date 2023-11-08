@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Camera } from 'expo-camera';
+import { Camera, CameraType } from 'expo-camera';
 import * as FaceDetector from 'expo-face-detector';
 
 const FaceCapture = () => {
   const [hasPermission, setHasPermission] = useState(null);
-  const [type, setType] = useState(Camera.Constants.Type.front);
+  //const [type, setType] = useState(Camera.Constants.Type.front);
   const [faceDetected, setFaceDetected] = useState(false);
+  const [type, setType] = useState(CameraType.front);
 
   const handleFaceDetect = ({ faces }) => {
     //console.log(faces);
@@ -30,6 +31,19 @@ const FaceCapture = () => {
     })();
   }, []);
 
+  const onPress = () => {
+    console.log("onPress");
+    if (Camera) {
+      console.log(Camera);
+      const options = {quality: 1, base64: true};
+      //const data = await this.camera.takePictureAsync(options);
+      //Camera.takePictureAsync({ onPictureSaved: onPictureSaved });
+    }
+  }
+
+  const toggleCameraType = () => {
+    setType(current => (current === CameraType.back ? CameraType.front : CameraType.back));
+  }
   return (
     <View style={styles.container}>
       <Camera 
@@ -41,8 +55,11 @@ const FaceCapture = () => {
           <View style={[styles.oval, faceDetected ? styles.greenOval : null]}></View>
         </View>
         <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.button}>
+          <TouchableOpacity style={styles.button} onPress={onPress}>
             <Text style={styles.text}>Capture</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.button} onPress={toggleCameraType}>
+            <Text style={styles.text}>Flip Camera</Text>
           </TouchableOpacity>
         </View>
       </Camera>
