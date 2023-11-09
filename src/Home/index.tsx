@@ -27,6 +27,7 @@ export function Home({
 	);
 	const [cameraRef, setCameraRef] = useState<any>(null);
 	const [faceDir, setFaceDir] = useState<any>("");
+	const [faceImage, setFaceImage] = useState<any>("");
 
 	const handleImagePickerNeutro = async () => {
 		const resultNeutro = await ImagePicker.launchImageLibraryAsync({
@@ -56,7 +57,6 @@ export function Home({
 		const face = faces[0] as any;
 
 		if (face) {
-			// console.log(face);
 			const { size, origin } = face.bounds;
 			faceValues.value = {
 				width: size.width,
@@ -68,7 +68,6 @@ export function Home({
 			setFaceDetected(true);
 
 			if (ativarImgProps) {
-				// console.log(face);
 				if (face.smilingProbability > 0.9) {
 					freezeFrame();
 				} else if (
@@ -92,7 +91,6 @@ export function Home({
 		if (cameraRef) {
 			let photo = await cameraRef.takePictureAsync();
 			await setImage(photo.uri);
-			// console.log(photo.uri);
 
 			// Freeze the image for 2 seconds
 			await new Promise((resolve) => setTimeout(resolve, 3000));
@@ -100,13 +98,6 @@ export function Home({
 			// Save the image as a jpg file
 			const dirInfo = await FileSystem.getInfoAsync(faceDir);
 			faceDir ? console.log(dirInfo) : createDirectory();
-			// let newFileUri =
-			// 	photo.uri.substring(0, photo.uri.lastIndexOf(".")) + ".jpg";
-
-			// await FileSystem.moveAsync({
-			// 	from: photo.uri,
-			// 	to: newFileUri,
-			// });
 			await saveImage(photo);
 			await uploadImage();
 
@@ -151,43 +142,38 @@ export function Home({
 					from: photo.uri,
 					to: newFileUri,
 				});
-				console.log("Imagem salva!");
+				setFaceImage(newFileUri);
+				console.log("Imagem salva!", newFileUri);
 			} catch (error) {
 				console.error("Erro ao salvar a imagem:", error);
 			}
 		}
 	}
 	async function uploadImage() {
-		const uri = `${faceDir}/image.jpg`;
+		const uri = faceImage;
 		let formData = new FormData();
 		let localUri = uri;
 		let filename = localUri.split("/").pop();
-
+		console.log("localUri", localUri, "filename: ", filename);
 		// Infer the type of the image
 		let match = /\.(\w+)$/.exec(filename || "");
 		let type = match ? `image/${match[1]}` : `image`;
 
-		// Assume "file" is the name of the form field the server expects
-		formData.append("file", {
-			uri: localUri,
-			name: filename || "image.jpg",
-			type,
-		});
-
-		const options = {
-			method: "POST",
-			url: "http://192.168.0.10:7000/upload",
-			headers: {
-				"Content-Type":
-					"multipart/form-data; boundary=---011000010111000001101001",
-				"User-Agent": "axios",
-			},
-			data: formData,
-		};
-
 		try {
-			const response = await axios(options);
-			console.log(response.data);
+			const response = await FileSystem.uploadAsync(
+				"http://192.168.0.10:7000/upload",
+				localUri,
+				{
+					fieldName: "file",
+					httpMethod: "POST",
+					uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+					mimeType: "multipart/form-data",
+					parameters: {
+						boundaryString: "---011000010111000001101001",
+					},
+				}
+			);
+			console.log(response);
 		} catch (error) {
 			console.error(error);
 		}
