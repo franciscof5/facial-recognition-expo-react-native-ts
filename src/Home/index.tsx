@@ -4,13 +4,9 @@ import { Camera, CameraType, FaceDetectionResult } from "expo-camera";
 import * as FaceDetector from "expo-face-detector";
 import * as ImagePicker from "expo-image-picker";
 import * as FileSystem from "expo-file-system";
-import axios from "axios";
-import FormData from "form-data";
-
 import Animated, {
 	useSharedValue,
 	useAnimatedStyle,
-	ColorSpace,
 } from "react-native-reanimated";
 
 import { styles } from "./styles";
@@ -20,6 +16,9 @@ export function Home({
 	adicionarImgPropsActiveNeutro,
 	setAddImgPropsNeutro,
 }: any) {
+	useEffect(() => {
+		requestPermission();
+	}, []);
 	const [faceDetected, setFaceDetected] = useState(false);
 	const [permission, requestPermission] = Camera.useCameraPermissions();
 	const [image, setImage] = useState(
@@ -28,6 +27,7 @@ export function Home({
 	const [cameraRef, setCameraRef] = useState<any>(null);
 	const [faceDir, setFaceDir] = useState<any>("");
 	const [faceImage, setFaceImage] = useState<any>("");
+	const [apiResponse, setApiResponse] = useState<any>(true);
 
 	const handleImagePickerNeutro = async () => {
 		const resultNeutro = await ImagePicker.launchImageLibraryAsync({
@@ -53,7 +53,7 @@ export function Home({
 		y: 0,
 	});
 
-	function handleFacesDetected({ faces }: FaceDetectionResult) {
+	async function handleFacesDetected({ faces }: FaceDetectionResult) {
 		const face = faces[0] as any;
 
 		if (face) {
@@ -66,46 +66,9 @@ export function Home({
 			};
 
 			setFaceDetected(true);
-
-			if (ativarImgProps) {
-				if (face.smilingProbability > 0.9) {
-					freezeFrame();
-				} else if (
-					face.leftEyeOpenProbability > 0.8 &&
-					face.rightEyeOpenProbability < 0.8
-				) {
-					// setImage(image);
-					freezeFrame();
-				} else {
-					// setImage(image);
-					// freezeFrame();
-					setFaceDetected(false);
-				}
-			} else {
-				setFaceDetected(false);
-			}
+			await dectectFace(face);
 		}
 	}
-
-	const freezeFrame = async () => {
-		if (cameraRef) {
-			let photo = await cameraRef.takePictureAsync();
-			await setImage(photo.uri);
-
-			// Freeze the image for 2 seconds
-			await new Promise((resolve) => setTimeout(resolve, 3000));
-
-			// Save the image as a jpg file
-			const dirInfo = await FileSystem.getInfoAsync(faceDir);
-			faceDir ? console.log(dirInfo) : createDirectory();
-			await saveImage(photo);
-			await uploadImage();
-
-			// Start a new 5 second timer before allowing a new detection
-			await new Promise((resolve) => setTimeout(resolve, 5000));
-		}
-	};
-
 	const animatedStyle = useAnimatedStyle(() => ({
 		position: "absolute",
 		zIndex: 1,
@@ -117,6 +80,43 @@ export function Home({
 		],
 		borderRadius: 100,
 	}));
+
+	async function dectectFace(face: any) {
+		if (ativarImgProps && apiResponse) {
+			if (face.smilingProbability > 0.9) {
+				await freezeFrame();
+			} else if (
+				face.leftEyeOpenProbability > 0.8 &&
+				face.rightEyeOpenProbability < 0.8
+			) {
+				await freezeFrame();
+			} else {
+				setFaceDetected(false);
+			}
+		} else {
+			setFaceDetected(false);
+		}
+	}
+
+	async function freezeFrame() {
+		if (cameraRef) {
+			let photo = await cameraRef.takePictureAsync();
+			// Freeze the image for 3 seconds
+			await setImage(photo.uri);
+			await new Promise((resolve) => setTimeout(resolve, 3000));
+
+			// Save the image as a jpg file
+			const dirInfo = await FileSystem.getInfoAsync(faceDir);
+			faceDir ? console.log(dirInfo) : createDirectory();
+			await saveImage(photo);
+			// upload image to faceID API
+			await uploadImage();
+			// setReadToDetect(false);
+			// // Start a new 7 second timer before allowing a new detection
+			// await new Promise((resolve) => setTimeout(resolve, 7000));
+			// setFaceDetected(true);
+		}
+	}
 
 	async function createDirectory() {
 		const dir = FileSystem.documentDirectory + "faceDetected/";
@@ -132,7 +132,6 @@ export function Home({
 	}
 	async function saveImage(cameraRef: any) {
 		if (cameraRef) {
-			// let photo = await cameraRef.takePictureAsync();
 			let photo = cameraRef;
 
 			const newFileUri = `${faceDir}/image.jpg`;
@@ -143,7 +142,7 @@ export function Home({
 					to: newFileUri,
 				});
 				setFaceImage(newFileUri);
-				console.log("Imagem salva!", newFileUri);
+				console.log("Imagem salva!");
 			} catch (error) {
 				console.error("Erro ao salvar a imagem:", error);
 			}
@@ -151,13 +150,10 @@ export function Home({
 	}
 	async function uploadImage() {
 		const uri = faceImage;
-		let formData = new FormData();
 		let localUri = uri;
 		let filename = localUri.split("/").pop();
-		console.log("localUri", localUri, "filename: ", filename);
-		// Infer the type of the image
-		let match = /\.(\w+)$/.exec(filename || "");
-		let type = match ? `image/${match[1]}` : `image`;
+		console.log("filename: ", filename);
+		setApiResponse(false); // Cmachado: seta o estado para false para não permitir que o usuário faça mais de um upload por vez
 
 		try {
 			const response = await FileSystem.uploadAsync(
@@ -174,13 +170,12 @@ export function Home({
 				}
 			);
 			console.log(response);
+			setApiResponse(true);
 		} catch (error) {
 			console.error(error);
+			setApiResponse(false);
 		}
 	}
-	useEffect(() => {
-		requestPermission();
-	}, []);
 
 	if (!permission?.granted) {
 		return;
