@@ -164,7 +164,7 @@ export function Home({
 		let localUri = uri;
 		let filename = localUri ? localUri.split("/").pop() : "";
 		console.log("enviando para api: ", filename);
-		setApiResponse(false); // Cmachado: seta o estado para false para não permitir que o usuário faça mais de um upload por vez
+		await setApiResponse(false); // Cmachado: seta o estado para false para não permitir que o usuário faça mais de um upload por vez
 
 		try {
 			if (localUri) {
@@ -187,7 +187,7 @@ export function Home({
 			}
 		} catch (error) {
 			console.error(error);
-			await setApiResponse(false);
+			await setApiResponse(true);
 		}
 	}
 
@@ -208,14 +208,14 @@ export function Home({
 					mode: FaceDetector.FaceDetectorMode.accurate, // Cmachado: altera o modo de detecção para o modo mais preciso
 					detectLandmarks: FaceDetector.FaceDetectorLandmarks.all,
 					runClassifications: FaceDetector.FaceDetectorClassifications.all,
-					minDetectionInterval: 2000,
+					minDetectionInterval: 1000,
 					tracking: true,
 				}}
 			/>
 			{faceImage !== null && (
 				<Animated.Image
 					style={animatedStyle}
-					source={{ uri: faceImage ?? undefined }} // Cmachado: altera o source para a imagem que foi tirada checar se é undefined
+					source={{ uri: image ?? undefined }} // Cmachado: altera o source para a imagem que foi tirada checar se é undefined
 				/>
 			)}
 		</View>
