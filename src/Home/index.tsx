@@ -21,12 +21,13 @@ export function Home({
 	}, []);
 	const [faceDetected, setFaceDetected] = useState(false);
 	const [permission, requestPermission] = Camera.useCameraPermissions();
-	const [image, setImage] = useState(
-		"https://cdn.icon-icons.com/icons2/564/PNG/512/Add_Image_icon-icons.com_54218.png"
-	);
-	const [cameraRef, setCameraRef] = useState<any>(null);
-	const [faceDir, setFaceDir] = useState<any>("");
-	const [faceImage, setFaceImage] = useState<any>("");
+	// const [image, setImage] = useState(
+	// 	"https://cdn.icon-icons.com/icons2/564/PNG/512/Add_Image_icon-icons.com_54218.png"
+	// );
+	const [image, setImage] = useState<string | null>(null); // Cmachado: dado da Face detectada pela camera, inicializa o estado da imagem como null para não aparecer a imagem padrão
+	const [cameraRef, setCameraRef] = useState<string | null | any>(null); // Cmachado: altera o estado da cameraRef para null para permitir que a camera seja inicializada apenas uma vez
+	const [faceDir, setFaceDir] = useState<string | null>(null); // Cmachado: inicializa o estado do diretório como null para criar o diretório apenas uma vez
+	const [faceImage, setFaceImage] = useState<string | null>(null); // Cmachado: inicializa o estado da imagem como null para não aparecer a imagem padrão
 	const [apiResponse, setApiResponse] = useState<any>(true);
 
 	const handleImagePickerNeutro = async () => {
@@ -64,9 +65,13 @@ export function Home({
 				x: origin.x,
 				y: origin.y,
 			};
-
-			setFaceDetected(true);
-			await dectectFace(face);
+			// console.log(
+			// 	"faceValues: ",
+			// 	face.leftEyeOpenProbability,
+			// 	face.rightEyeOpenProbability
+			// );
+			await extractFace(face); // Cmachado: chama a função para extrair o rosto da imagem chamada anteriormente a renderização
+			await setFaceDetected(true);
 		}
 	}
 	const animatedStyle = useAnimatedStyle(() => ({
@@ -81,58 +86,60 @@ export function Home({
 		borderRadius: 100,
 	}));
 
-	async function dectectFace(face: any) {
-		if (ativarImgProps && apiResponse) {
-			if (face.smilingProbability > 0.9) {
-				await freezeFrame();
+	async function extractFace(face: any) {
+		// funçaõ para extrair o rosto da imagem dectada pela camera
+		if (ativarImgProps) {
+			if (faceDetected && apiResponse) {
+				await takePicture();
 			} else if (
 				face.leftEyeOpenProbability > 0.8 &&
 				face.rightEyeOpenProbability < 0.8
 			) {
-				await freezeFrame();
+				await takePicture(); // Cmachado: chama a função para tirar a foto da imagem detectada pela camera
 			} else {
 				setFaceDetected(false);
 			}
 		} else {
-			setFaceDetected(false);
+			await setFaceDetected(false);
 		}
 	}
 
-	async function freezeFrame() {
+	async function takePicture() {
 		if (cameraRef) {
 			let photo = await cameraRef.takePictureAsync();
-			// Freeze the image for 3 seconds
-			await setImage(photo.uri);
-			await new Promise((resolve) => setTimeout(resolve, 3000));
+			// Renderiza a imagem tirada pela camera por 3 segundos
+			await setImage(photo.uri); // Cmachado: altera o source para a imagem que foi tirada
+			// await new Promise((resolve) => setTimeout(resolve, 3000));
 
-			// Save the image as a jpg file
-			const dirInfo = await FileSystem.getInfoAsync(faceDir);
-			faceDir ? console.log(dirInfo) : createDirectory();
-			await saveImage(photo);
-			// upload image to faceID API
-			await uploadImage();
-			// setReadToDetect(false);
-			// // Start a new 7 second timer before allowing a new detection
-			// await new Promise((resolve) => setTimeout(resolve, 7000));
-			// setFaceDetected(true);
+			// Salva a imagem no diretório criado com o nome de image.jpg
+			if (faceDir !== null) {
+				// Cmachado: verifica se o diretório já foi criado para não criar novamente
+				const dirInfo = await FileSystem.getInfoAsync(faceDir);
+				console.log("dirInfo  ", dirInfo.exists);
+				await saveImage(photo);
+			} else {
+				await createDirectory();
+				await saveImage(photo); // Cmachado: salva a imagem no diretório criado anteriormente
+			}
 		}
 	}
 
 	async function createDirectory() {
-		const dir = FileSystem.documentDirectory + "faceDetected/";
+		const dir = FileSystem.documentDirectory + "faceDetected/"; // Cmachado: cria o diretório para salvar a imagem com o nome de faceDetected
 
 		try {
 			await FileSystem.makeDirectoryAsync(dir, { intermediates: true });
 			console.log("Diretório criado!");
-			setFaceDir(dir);
+			await setFaceDir(dir);
 		} catch (error) {
 			console.error("Erro ao criar o diretório:", error);
-			setFaceDir("");
+			setFaceDir(null);
 		}
 	}
 	async function saveImage(cameraRef: any) {
 		if (cameraRef) {
 			let photo = cameraRef;
+			console.log("photo: ", photo.uri);
 
 			const newFileUri = `${faceDir}/image.jpg`;
 
@@ -141,39 +148,46 @@ export function Home({
 					from: photo.uri,
 					to: newFileUri,
 				});
-				setFaceImage(newFileUri);
+				await setFaceImage(newFileUri);
 				console.log("Imagem salva!");
 			} catch (error) {
 				console.error("Erro ao salvar a imagem:", error);
 			}
 		}
+		if (faceImage !== null) {
+			await uploadImage();
+		}
 	}
+
 	async function uploadImage() {
 		const uri = faceImage;
 		let localUri = uri;
-		let filename = localUri.split("/").pop();
-		console.log("filename: ", filename);
+		let filename = localUri ? localUri.split("/").pop() : "";
+		console.log("enviando para api: ", filename);
 		setApiResponse(false); // Cmachado: seta o estado para false para não permitir que o usuário faça mais de um upload por vez
 
 		try {
-			const response = await FileSystem.uploadAsync(
-				"http://192.168.0.10:7000/upload",
-				localUri,
-				{
-					fieldName: "file",
-					httpMethod: "POST",
-					uploadType: FileSystem.FileSystemUploadType.MULTIPART,
-					mimeType: "multipart/form-data",
-					parameters: {
-						boundaryString: "---011000010111000001101001",
-					},
-				}
-			);
-			console.log(response);
-			setApiResponse(true);
+			if (localUri) {
+				// Cmachado: verifica se a uri não está vazia para fazer o upload
+				const response = await FileSystem.uploadAsync(
+					"http://192.168.0.10:7000/upload",
+					localUri,
+					{
+						fieldName: "file",
+						httpMethod: "POST",
+						uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+						mimeType: "multipart/form-data",
+						parameters: {
+							boundaryString: "---011000010111000001101001",
+						},
+					}
+				);
+				console.log("Response", response.body);
+				await setApiResponse(true);
+			}
 		} catch (error) {
 			console.error(error);
-			setApiResponse(false);
+			await setApiResponse(false);
 		}
 	}
 
@@ -191,15 +205,18 @@ export function Home({
 				type={CameraType.front}
 				onFacesDetected={handleFacesDetected}
 				faceDetectorSettings={{
-					mode: FaceDetector.FaceDetectorMode.fast,
+					mode: FaceDetector.FaceDetectorMode.accurate, // Cmachado: altera o modo de detecção para o modo mais preciso
 					detectLandmarks: FaceDetector.FaceDetectorLandmarks.all,
 					runClassifications: FaceDetector.FaceDetectorClassifications.all,
-					minDetectionInterval: 100,
+					minDetectionInterval: 2000,
 					tracking: true,
 				}}
 			/>
-			{faceDetected && (
-				<Animated.Image style={animatedStyle} source={{ uri: image }} />
+			{faceImage !== null && (
+				<Animated.Image
+					style={animatedStyle}
+					source={{ uri: faceImage ?? undefined }} // Cmachado: altera o source para a imagem que foi tirada checar se é undefined
+				/>
 			)}
 		</View>
 	);
