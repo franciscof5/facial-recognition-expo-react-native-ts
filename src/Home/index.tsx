@@ -89,6 +89,14 @@ export function Home({
 	async function extractFace(face: any) {
 		// funçaõ para extrair o rosto da imagem dectada pela camera
 		if (ativarImgProps) {
+			console.info(
+				"ativarImgProps: ",
+				ativarImgProps,
+				"faceDetected: ",
+				faceDetected,
+				"apiResponse: ",
+				apiResponse
+			);
 			if (faceDetected && apiResponse) {
 				await takePicture();
 			} else if (
@@ -183,6 +191,13 @@ export function Home({
 					}
 				);
 				console.log("Response", response.body);
+				await FileSystem.deleteAsync(localUri)
+					.then(() => {
+						console.log("Arquivo deletado com sucesso");
+					})
+					.catch((error) => {
+						console.error("Erro ao deletar o arquivo:", error);
+					});
 				await setApiResponse(true);
 			}
 		} catch (error) {
@@ -208,14 +223,14 @@ export function Home({
 					mode: FaceDetector.FaceDetectorMode.accurate, // Cmachado: altera o modo de detecção para o modo mais preciso
 					detectLandmarks: FaceDetector.FaceDetectorLandmarks.all,
 					runClassifications: FaceDetector.FaceDetectorClassifications.all,
-					minDetectionInterval: 1000,
+					minDetectionInterval: 7000,
 					tracking: true,
 				}}
 			/>
-			{faceImage !== null && (
+			{apiResponse !== true && (
 				<Animated.Image
 					style={animatedStyle}
-					source={{ uri: image ?? undefined }} // Cmachado: altera o source para a imagem que foi tirada checar se é undefined
+					source={{ uri: faceImage ?? undefined }} // Cmachado: altera o source para a imagem que foi tirada checar se é undefined
 				/>
 			)}
 		</View>
