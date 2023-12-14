@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { View } from "react-native";
+import { View, Text } from "react-native";
 import { Camera, CameraType, FaceDetectionResult } from "expo-camera";
 import * as FaceDetector from "expo-face-detector";
 import * as ImagePicker from "expo-image-picker";
@@ -11,15 +11,13 @@ import Animated, {
 
 import { styles } from "./styles";
 
-export function Home({
-	ativarImgProps,
-	adicionarImgPropsActiveNeutro,
-	setAddImgPropsNeutro,
-}: any) {
+export function Home() {
 	useEffect(() => {
 		requestPermission();
 	}, []);
+	const [logText, setlogText] = useState("inicializando app...");
 	const [faceDetected, setFaceDetected] = useState(false);
+	const [faceDetectedOnCenter, setFaceDetectedOnCenter] = useState(false);
 	const [permission, requestPermission] = Camera.useCameraPermissions();
 	// const [image, setImage] = useState(
 	// 	"https://cdn.icon-icons.com/icons2/564/PNG/512/Add_Image_icon-icons.com_54218.png"
@@ -28,7 +26,8 @@ export function Home({
 	const [cameraRef, setCameraRef] = useState<string | null | any>(null); // Cmachado: altera o estado da cameraRef para null para permitir que a camera seja inicializada apenas uma vez
 	const [faceDir, setFaceDir] = useState<string | null>(null); // Cmachado: inicializa o estado do diretório como null para criar o diretório apenas uma vez
 	const [faceImage, setFaceImage] = useState<string | null>(null); // Cmachado: inicializa o estado da imagem como null para não aparecer a imagem padrão
-	const [apiResponse, setApiResponse] = useState<any>(true);
+	const [waitingApiResponse, setwaitingApiResponse] = useState<any>(false);
+	const [CPFApiResponse, setCPFApiResponse] = useState<any>(0);
 
 	const handleImagePickerNeutro = async () => {
 		const resultNeutro = await ImagePicker.launchImageLibraryAsync({
@@ -41,11 +40,6 @@ export function Home({
 			setImage(resultNeutro.assets[0].uri);
 		}
 	};
-
-	if (adicionarImgPropsActiveNeutro) {
-		handleImagePickerNeutro();
-		setAddImgPropsNeutro(false);
-	}
 
 	const faceValues = useSharedValue({
 		width: 0,
@@ -87,28 +81,23 @@ export function Home({
 	}));
 
 	async function extractFace(face: any) {
+		setlogText("Rosto detectado, vamos tirar uma foto");
 		// funçaõ para extrair o rosto da imagem dectada pela camera
-		if (ativarImgProps) {
-			console.info(
-				"ativarImgProps: ",
-				ativarImgProps,
-				"faceDetected: ",
-				faceDetected,
-				"apiResponse: ",
-				apiResponse
-			);
-			if (faceDetected && apiResponse) {
-				await takePicture();
-			} else if (
-				face.leftEyeOpenProbability > 0.8 &&
-				face.rightEyeOpenProbability < 0.8
-			) {
-				await takePicture(); // Cmachado: chama a função para tirar a foto da imagem detectada pela camera
-			} else {
-				setFaceDetected(false);
-			}
+		console.info(
+			"faceDetected: ",
+			faceDetected,
+			"waitingApiResponse: ",
+			waitingApiResponse
+		);
+		if (faceDetected && !waitingApiResponse) {
+			await takePicture();
+		} else if (
+			face.leftEyeOpenProbability > 0.8 &&
+			face.rightEyeOpenProbability < 0.8
+		) {
+			await takePicture(); // Cmachado: chama a função para tirar a foto da imagem detectada pela camera
 		} else {
-			await setFaceDetected(false);
+			setFaceDetected(false);
 		}
 	}
 
@@ -157,6 +146,7 @@ export function Home({
 					to: newFileUri,
 				});
 				await setFaceImage(newFileUri);
+				setlogText("Foto registrada, aguarde autorização...");
 				console.log("Imagem salva!");
 			} catch (error) {
 				console.error("Erro ao salvar a imagem:", error);
@@ -168,29 +158,30 @@ export function Home({
 	}
 
 	async function uploadImage() {
+		const apiUri = "http://192.168.5.20:7000/upload";
 		const uri = faceImage;
 		let localUri = uri;
 		let filename = localUri ? localUri.split("/").pop() : "";
+		setlogText("Enviando para servidor...");
 		console.log("enviando para api: ", filename);
-		await setApiResponse(false); // Cmachado: seta o estado para false para não permitir que o usuário faça mais de um upload por vez
+		await setwaitingApiResponse(true); // Cmachado: seta o estado para false para não permitir que o usuário faça mais de um upload por vez
 
 		try {
 			if (localUri) {
 				// Cmachado: verifica se a uri não está vazia para fazer o upload
-				const response = await FileSystem.uploadAsync(
-					"http://192.168.0.10:7000/upload",
-					localUri,
-					{
-						fieldName: "file",
-						httpMethod: "POST",
-						uploadType: FileSystem.FileSystemUploadType.MULTIPART,
-						mimeType: "multipart/form-data",
-						parameters: {
-							boundaryString: "---011000010111000001101001",
-						},
-					}
-				);
+				const response = await FileSystem.uploadAsync(apiUri, localUri, {
+					fieldName: "file",
+					httpMethod: "POST",
+					uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+					mimeType: "multipart/form-data",
+					parameters: {
+						boundaryString: "---011000010111000001101001",
+					},
+				});
 				console.log("Response", response.body);
+				let cpf = response.body.slice(44, 56);
+				console.log("cpf", cpf);
+
 				await FileSystem.deleteAsync(localUri)
 					.then(() => {
 						console.log("Arquivo deletado com sucesso");
@@ -198,11 +189,19 @@ export function Home({
 					.catch((error) => {
 						console.error("Erro ao deletar o arquivo:", error);
 					});
-				await setApiResponse(true);
+				if (cpf) {
+					setlogText("CPF encontrado: " + cpf);
+					setCPFApiResponse(cpf);
+					setTimeout(() => {
+						setwaitingApiResponse(false);
+					}, 2000);
+				} else {
+					await setwaitingApiResponse(false);
+				}
 			}
 		} catch (error) {
 			console.error(error);
-			await setApiResponse(true);
+			await setwaitingApiResponse(false);
 		}
 	}
 
@@ -227,12 +226,22 @@ export function Home({
 					tracking: true,
 				}}
 			/>
-			{apiResponse !== true && (
+			{waitingApiResponse == true && (
 				<Animated.Image
 					style={animatedStyle}
 					source={{ uri: faceImage ?? undefined }} // Cmachado: altera o source para a imagem que foi tirada checar se é undefined
 				/>
 			)}
+			<View
+				style={[
+					styles.viewLog,
+					waitingApiResponse
+						? styles.viewLogApiWaiting
+						: styles.viewLogApiResponse,
+				]}
+			>
+				<Text style={styles.viewLogText}>{logText}</Text>
+			</View>
 		</View>
 	);
 }
