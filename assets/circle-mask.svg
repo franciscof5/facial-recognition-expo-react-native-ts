@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="200mm"
+   height="200mm"
+   viewBox="0 0 200 200"
+   version="1.1"
+   id="svg5"
+   inkscape:version="1.2.1 (9c6d41e, 2022-07-14)"
+   sodipodi:docname="circle-mask.svg"
+   inkscape:export-filename="circle-mask.png"
+   inkscape:export-xdpi="96"
+   inkscape:export-ydpi="96"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="px"
+     showgrid="false"
+     inkscape:zoom="0.41638253"
+     inkscape:cx="493.53655"
+     inkscape:cy="169.31546"
+     inkscape:window-width="1390"
+     inkscape:window-height="623"
+     inkscape:window-x="0"
+     inkscape:window-y="25"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="layer2" />
+  <defs
+     id="defs2" />
+  <g
+     inkscape:groupmode="layer"
+     id="layer2"
+     inkscape:label="Layer 2"
+     style="fill:#ffaaaa" />
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <path
+       id="rect551"
+       style="fill:#1a1a1a;stroke-width:2.21266;stroke-dasharray:2.21266, 2.21266"
+       d="M 0 0 L 0 200.05962 L 200.34022 200.05962 L 200.34022 0 L 0 0 z M 100.0001 17.39377 A 82.606323 82.606323 0 0 1 182.60642 100.0001 A 82.606323 82.606323 0 0 1 100.0001 182.60642 A 82.606323 82.606323 0 0 1 17.39377 100.0001 A 82.606323 82.606323 0 0 1 100.0001 17.39377 z " />
+  </g>
+</svg>

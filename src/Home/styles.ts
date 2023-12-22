@@ -26,7 +26,7 @@ export const styles = StyleSheet.create({
 		backgroundColor: "gray",
 	},
 	viewLogApiWaiting: {
-		backgroundColor: "blue",
+		backgroundColor: "#f88b05",
 	},
 	viewLogText: {
 		fontSize: 30,
@@ -34,5 +34,13 @@ export const styles = StyleSheet.create({
 		flex: 1,
 		justifyContent: "center",
 		textAlign: "center",
+	},
+	splashEnviando: {
+		position: "absolute",
+		backgroundColor: "#DDD",
+		flex: 1,
+		height: "80%",
+		width: "100%",
+		zIndex: 20,
 	},
 });

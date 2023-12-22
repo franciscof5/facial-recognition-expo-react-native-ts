@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { View, Text } from "react-native";
+import { View, Text, Image, ImageBackground } from "react-native";
 import { Camera, CameraType, FaceDetectionResult } from "expo-camera";
 import * as FaceDetector from "expo-face-detector";
 import * as ImagePicker from "expo-image-picker";
@@ -7,15 +7,18 @@ import * as FileSystem from "expo-file-system";
 import Animated, {
 	useSharedValue,
 	useAnimatedStyle,
+	withSpring,
+	withTiming
 } from "react-native-reanimated";
-
+import Svg, { Path } from "react-native-svg"
+import CircleMask from "./../../assets/circle-mask.png"
 import { styles } from "./styles";
 
 export function Home() {
 	useEffect(() => {
 		requestPermission();
 	}, []);
-	const [logText, setlogText] = useState("inicializando app...");
+	const [logText, setlogText] = useState("Inicializando app... Posicione o rosto no centro do círculo");
 	const [faceDetected, setFaceDetected] = useState(false);
 	const [faceDetectedOnCenter, setFaceDetectedOnCenter] = useState(false);
 	const [permission, requestPermission] = Camera.useCameraPermissions();
@@ -42,10 +45,10 @@ export function Home() {
 	};
 
 	const faceValues = useSharedValue({
-		width: 0,
-		height: 0,
-		x: 0,
-		y: 0,
+		width: 110,
+		height: 110,
+		x: 110,
+		y: 110,
 	});
 
 	async function handleFacesDetected({ faces }: FaceDetectionResult) {
@@ -53,12 +56,12 @@ export function Home() {
 
 		if (face) {
 			const { size, origin } = face.bounds;
-			faceValues.value = {
-				width: size.width,
-				height: size.height,
-				x: origin.x,
-				y: origin.y,
-			};
+			//faceValues.value = {
+			//	width: size.width,
+			//	height: size.height,
+			//	x: origin.x,
+			//	y: origin.y,
+			//};
 			// console.log(
 			// 	"faceValues: ",
 			// 	face.leftEyeOpenProbability,
@@ -71,16 +74,29 @@ export function Home() {
 	const animatedStyle = useAnimatedStyle(() => ({
 		position: "absolute",
 		zIndex: 1,
-		width: faceValues.value.width,
-		height: faceValues.value.height,
+		width: 200,
+		height: 200,
+		//transform: [
+		//	{ translateX: +10 },
+		//	{ translateY: 200 },
+		//],
+		borderRadius: 100,
+		//width: faceValues.value.width,
+		//height: faceValues.value.height,
 		transform: [
 			{ translateX: faceValues.value.x },
 			{ translateY: faceValues.value.y },
 		],
-		borderRadius: 100,
 	}));
 
+	const truncatedAnimation = useAnimatedStyle(() => {
+		return {
+		  height: withTiming(faceValues.value.height, {duration: 1000}),
+		};
+	  }, []);
+
 	async function extractFace(face: any) {
+		console.log("extractFace()");
 		setlogText("Rosto detectado, vamos tirar uma foto");
 		// funçaõ para extrair o rosto da imagem dectada pela camera
 		console.info(
@@ -102,6 +118,7 @@ export function Home() {
 	}
 
 	async function takePicture() {
+		console.log("takePicture()");
 		if (cameraRef) {
 			let photo = await cameraRef.takePictureAsync();
 			// Renderiza a imagem tirada pela camera por 3 segundos
@@ -122,34 +139,40 @@ export function Home() {
 	}
 
 	async function createDirectory() {
+		console.log("createDirectory()");
 		const dir = FileSystem.documentDirectory + "faceDetected/"; // Cmachado: cria o diretório para salvar a imagem com o nome de faceDetected
 
 		try {
 			await FileSystem.makeDirectoryAsync(dir, { intermediates: true });
 			console.log("Diretório criado!");
+			setlogText("Configurando primeiro acesso... Favor aguardar...");
 			await setFaceDir(dir);
 		} catch (error) {
 			console.error("Erro ao criar o diretório:", error);
 			setFaceDir(null);
 		}
 	}
+	
 	async function saveImage(cameraRef: any) {
+		console.log("saveImage()");
 		if (cameraRef) {
 			let photo = cameraRef;
-			console.log("photo: ", photo.uri);
+			console.log("photo.uri: ", photo.uri);
 
 			const newFileUri = `${faceDir}/image.jpg`;
-
-			try {
-				await FileSystem.moveAsync({
-					from: photo.uri,
-					to: newFileUri,
-				});
-				await setFaceImage(newFileUri);
-				setlogText("Foto registrada, aguarde autorização...");
-				console.log("Imagem salva!");
-			} catch (error) {
-				console.error("Erro ao salvar a imagem:", error);
+			if(faceDir) {
+				//como a função de criar diretório é assíncrona, aqui o código chega antes do diretório ser criado
+				try {
+					await FileSystem.moveAsync({
+						from: photo.uri,
+						to: newFileUri,
+					});
+					await setFaceImage(newFileUri);
+					setlogText("Foto registrada, aguarde autorização...");
+					console.log("Imagem salva!");
+				} catch (error) {
+					console.error("Erro ao salvar a imagem:", error);
+				}
 			}
 		}
 		if (faceImage !== null) {
@@ -158,12 +181,13 @@ export function Home() {
 	}
 
 	async function uploadImage() {
+		console.log("uploadImage()");
 		const apiUri = "http://192.168.5.20:7000/upload";
 		const uri = faceImage;
 		let localUri = uri;
 		let filename = localUri ? localUri.split("/").pop() : "";
 		setlogText("Enviando para servidor...");
-		console.log("enviando para api: ", filename);
+		console.log("enviando para api: " + filename);
 		await setwaitingApiResponse(true); // Cmachado: seta o estado para false para não permitir que o usuário faça mais de um upload por vez
 
 		try {
@@ -208,9 +232,20 @@ export function Home() {
 	if (!permission?.granted) {
 		return;
 	}
+	
 
 	return (
 		<View style={styles.container}>
+			<Image 
+				source={CircleMask} 
+				style={{
+					position: "absolute",
+					flex: 1,
+					zIndex: 10,
+					width: "100%",
+					height: "80%",
+					resizeMode: 'stretch'
+				}} />
 			<Camera
 				ref={(ref) => {
 					setCameraRef(ref);
@@ -227,10 +262,13 @@ export function Home() {
 				}}
 			/>
 			{waitingApiResponse == true && (
-				<Animated.Image
-					style={animatedStyle}
-					source={{ uri: faceImage ?? undefined }} // Cmachado: altera o source para a imagem que foi tirada checar se é undefined
-				/>
+				<View style={styles.splashEnviando}>
+					<Text>Enviando a foto para o servidor</Text>
+					<Animated.Image
+						style={[animatedStyle, truncatedAnimation]}
+						source={{ uri: faceImage ?? undefined }} // Cmachado: altera o source para a imagem que foi tirada checar se é undefined
+					/>
+				</View>
 			)}
 			<View
 				style={[
