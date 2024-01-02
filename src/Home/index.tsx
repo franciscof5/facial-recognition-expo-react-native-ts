@@ -13,12 +13,23 @@ import Animated, {
 import Svg, { Path } from "react-native-svg"
 import CircleMask from "./../../assets/circle-mask.png"
 import { styles } from "./styles";
+/*FONT AWESOME*/
+import { library } from '@fortawesome/fontawesome-svg-core'
+import { fab } from '@fortawesome/free-brands-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
+import { faMugSaucer } from '@fortawesome/free-solid-svg-icons/faMugSaucer'
+import { faSquareCheck } from '@fortawesome/free-solid-svg-icons/faSquareCheck'
+//import { faMugEmpty } from '@fortawesome/free-solid-svg-icons/faMugEmpty'
+import { faCrosshairs } from '@fortawesome/free-solid-svg-icons/faCrosshairs'
+library.add(fab, faSquareCheck, faMugSaucer, faCrosshairs)
 
 export function Home() {
 	useEffect(() => {
 		requestPermission();
 	}, []);
+	const [logIcon, setlogIcon] = useState(faCrosshairs);
 	const [logText, setlogText] = useState("Inicializando app... Posicione o rosto no centro do círculo");
+	const [countAPIerrors, setcountAPIerrors] = useState(0);
 	const [faceDetected, setFaceDetected] = useState(false);
 	const [faceDetectedOnCenter, setFaceDetectedOnCenter] = useState(false);
 	const [permission, requestPermission] = Camera.useCameraPermissions();
@@ -68,7 +79,7 @@ export function Home() {
 			// 	face.rightEyeOpenProbability
 			// );
 			await extractFace(face); // Cmachado: chama a função para extrair o rosto da imagem chamada anteriormente a renderização
-			await setFaceDetected(true);
+			setFaceDetected(true);
 		}
 	}
 	const animatedStyle = useAnimatedStyle(() => ({
@@ -122,7 +133,7 @@ export function Home() {
 		if (cameraRef) {
 			let photo = await cameraRef.takePictureAsync();
 			// Renderiza a imagem tirada pela camera por 3 segundos
-			await setImage(photo.uri); // Cmachado: altera o source para a imagem que foi tirada
+			setImage(photo.uri); // Cmachado: altera o source para a imagem que foi tirada
 			// await new Promise((resolve) => setTimeout(resolve, 3000));
 
 			// Salva a imagem no diretório criado com o nome de image.jpg
@@ -146,8 +157,10 @@ export function Home() {
 			await FileSystem.makeDirectoryAsync(dir, { intermediates: true });
 			console.log("Diretório criado!");
 			setlogText("Configurando primeiro acesso... Favor aguardar...");
-			await setFaceDir(dir);
+			setlogIcon(faSquareCheck);
+			setFaceDir(dir);
 		} catch (error) {
+			setlogText("Erro ao criar diretório, configuração inicial falhou...");
 			console.error("Erro ao criar o diretório:", error);
 			setFaceDir(null);
 		}
@@ -167,7 +180,7 @@ export function Home() {
 						from: photo.uri,
 						to: newFileUri,
 					});
-					await setFaceImage(newFileUri);
+					setFaceImage(newFileUri);
 					setlogText("Foto registrada, aguarde autorização...");
 					console.log("Imagem salva!");
 				} catch (error) {
@@ -188,8 +201,7 @@ export function Home() {
 		let filename = localUri ? localUri.split("/").pop() : "";
 		setlogText("Enviando para servidor...");
 		console.log("enviando para api: " + filename);
-		await setwaitingApiResponse(true); // Cmachado: seta o estado para false para não permitir que o usuário faça mais de um upload por vez
-
+		setwaitingApiResponse(true);
 		try {
 			if (localUri) {
 				// Cmachado: verifica se a uri não está vazia para fazer o upload
@@ -220,12 +232,16 @@ export function Home() {
 						setwaitingApiResponse(false);
 					}, 2000);
 				} else {
-					await setwaitingApiResponse(false);
+					setwaitingApiResponse(false);
 				}
+				setcountAPIerrors(0);
+
 			}
 		} catch (error) {
 			console.error(error);
-			await setwaitingApiResponse(false);
+			setwaitingApiResponse(false);
+			setcountAPIerrors(1);
+			setlogText("erro ao comunicar-se, contagem: " + setcountAPIerrors)
 		}
 	}
 
@@ -278,7 +294,7 @@ export function Home() {
 						: styles.viewLogApiResponse,
 				]}
 			>
-				<Text style={styles.viewLogText}>{logText}</Text>
+				<FontAwesomeIcon icon={ logIcon } /><Text style={styles.viewLogText}>{logText}</Text>
 			</View>
 		</View>
 	);
