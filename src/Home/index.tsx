@@ -27,6 +27,7 @@ export function Home() {
 	useEffect(() => {
 		requestPermission();
 	}, []);
+	const [logColor, setlogColor] = useState("#DDD");
 	const [logIcon, setlogIcon] = useState(faCrosshairs);
 	const [logText, setlogText] = useState("Inicializando app... Posicione o rosto no centro do círculo");
 	const [countAPIerrors, setcountAPIerrors] = useState(0);
@@ -85,19 +86,19 @@ export function Home() {
 	const animatedStyle = useAnimatedStyle(() => ({
 		position: "absolute",
 		zIndex: 1,
-		width: 200,
-		height: 200,
+		width: "100%",
+		height: "100%",
 		//transform: [
 		//	{ translateX: +10 },
 		//	{ translateY: 200 },
 		//],
-		borderRadius: 100,
+		//borderRadius: 100,
 		//width: faceValues.value.width,
 		//height: faceValues.value.height,
-		transform: [
-			{ translateX: faceValues.value.x },
-			{ translateY: faceValues.value.y },
-		],
+		//transform: [
+		//	{ translateX: faceValues.value.x },
+		//	{ translateY: faceValues.value.y },
+		//],
 	}));
 
 	const truncatedAnimation = useAnimatedStyle(() => {
@@ -108,23 +109,29 @@ export function Home() {
 
 	async function extractFace(face: any) {
 		console.log("extractFace()");
-		setlogText("Rosto detectado, vamos tirar uma foto");
-		// funçaõ para extrair o rosto da imagem dectada pela camera
-		console.info(
-			"faceDetected: ",
-			faceDetected,
-			"waitingApiResponse: ",
-			waitingApiResponse
-		);
-		if (faceDetected && !waitingApiResponse) {
-			await takePicture();
-		} else if (
-			face.leftEyeOpenProbability > 0.8 &&
-			face.rightEyeOpenProbability < 0.8
-		) {
-			await takePicture(); // Cmachado: chama a função para tirar a foto da imagem detectada pela camera
+		if(waitingApiResponse) {
+			setlogColor("#ffc107");
+			console.log("aguardando resposta da API...")
 		} else {
-			setFaceDetected(false);
+			setlogColor("#DDD");
+			setlogText("Rosto detectado, vamos tirar uma foto");
+			// funçaõ para extrair o rosto da imagem dectada pela camera
+			console.info(
+				"faceDetected: ",
+				faceDetected,
+				"waitingApiResponse: ",
+				waitingApiResponse
+			);
+			if (faceDetected) {
+				takePicture();
+			} else if (
+				face.leftEyeOpenProbability > 0.8 &&
+				face.rightEyeOpenProbability < 0.8
+			) {
+				//esta redundante takePicture(); // Cmachado: chama a função para tirar a foto da imagem detectada pela camera
+			} else {
+				setFaceDetected(false);
+			}
 		}
 	}
 
@@ -158,8 +165,10 @@ export function Home() {
 			console.log("Diretório criado!");
 			setlogText("Configurando primeiro acesso... Favor aguardar...");
 			setlogIcon(faSquareCheck);
+			setlogColor("#17a2b8");
 			setFaceDir(dir);
 		} catch (error) {
+			setlogColor("#dc3545")
 			setlogText("Erro ao criar diretório, configuração inicial falhou...");
 			console.error("Erro ao criar o diretório:", error);
 			setFaceDir(null);
@@ -200,6 +209,7 @@ export function Home() {
 		let localUri = uri;
 		let filename = localUri ? localUri.split("/").pop() : "";
 		setlogText("Enviando para servidor...");
+		setlogColor("#ffc107");
 		console.log("enviando para api: " + filename);
 		setwaitingApiResponse(true);
 		try {
@@ -240,8 +250,9 @@ export function Home() {
 		} catch (error) {
 			console.error(error);
 			setwaitingApiResponse(false);
-			setcountAPIerrors(1);
-			setlogText("erro ao comunicar-se, contagem: " + setcountAPIerrors)
+			setcountAPIerrors(countAPIerrors + 1);
+			setlogColor("#dc3545")
+			setlogText("erro ao comunicar-se, contagem: " + countAPIerrors)
 		}
 	}
 
@@ -289,9 +300,7 @@ export function Home() {
 			<View
 				style={[
 					styles.viewLog,
-					waitingApiResponse
-						? styles.viewLogApiWaiting
-						: styles.viewLogApiResponse,
+					{ backgroundColor: logColor }
 				]}
 			>
 				<FontAwesomeIcon icon={ logIcon } /><Text style={styles.viewLogText}>{logText}</Text>

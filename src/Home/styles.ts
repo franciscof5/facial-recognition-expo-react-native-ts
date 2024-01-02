@@ -18,15 +18,8 @@ export const styles = StyleSheet.create({
 		rigth: 0,
 		bottom: 0,
 		zIndex: 10,
-		backgroundColor: "gray",
 		height: "20%",
 		borderWidth: 2,
-	},
-	viewLogApiResponse: {
-		backgroundColor: "gray",
-	},
-	viewLogApiWaiting: {
-		backgroundColor: "#f88b05",
 	},
 	viewLogText: {
 		fontSize: 30,
