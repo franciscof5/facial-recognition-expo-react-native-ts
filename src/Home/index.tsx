@@ -13,6 +13,9 @@ import Animated, {
 import Svg, { Path } from "react-native-svg"
 import CircleMask from "./../../assets/circle-mask.png"
 import { styles } from "./styles";
+import { Audio } from 'expo-av';
+import * as Speech from 'expo-speech';
+
 /*FONT AWESOME*/
 import { library } from '@fortawesome/fontawesome-svg-core'
 import { fab } from '@fortawesome/free-brands-svg-icons'
@@ -44,6 +47,17 @@ export function Home() {
 	const [waitingApiResponse, setwaitingApiResponse] = useState<any>(false);
 	const [CPFApiResponse, setCPFApiResponse] = useState<any>(0);
 
+	putMessageOnScreen = (msg, color, icon, loud) => {
+		setlogText(msg);
+		if(color)
+			setlogColor(color);
+		if(icon)
+			setlogIcon(icon);
+		if(loud) {
+			Speech.speak(msg);
+		}
+	}
+
 	const handleImagePickerNeutro = async () => {
 		const resultNeutro = await ImagePicker.launchImageLibraryAsync({
 			aspect: [4, 4],
@@ -57,10 +71,10 @@ export function Home() {
 	};
 
 	const faceValues = useSharedValue({
-		width: 110,
-		height: 110,
-		x: 110,
-		y: 110,
+		//width: 110,
+		//height: 110,
+		//x: 110,
+		//y: 110,
 	});
 
 	async function handleFacesDetected({ faces }: FaceDetectionResult) {
@@ -84,10 +98,10 @@ export function Home() {
 		}
 	}
 	const animatedStyle = useAnimatedStyle(() => ({
-		position: "absolute",
-		zIndex: 1,
+		//position: "absolute",
+		//zIndex: -10,
 		width: "100%",
-		height: "100%",
+		height: 10,
 		//transform: [
 		//	{ translateX: +10 },
 		//	{ translateY: 200 },
@@ -103,7 +117,7 @@ export function Home() {
 
 	const truncatedAnimation = useAnimatedStyle(() => {
 		return {
-		  height: withTiming(faceValues.value.height, {duration: 1000}),
+			height: withTiming(640, {duration: 2000}),
 		};
 	  }, []);
 
@@ -113,24 +127,29 @@ export function Home() {
 			setlogColor("#ffc107");
 			console.log("aguardando resposta da API...")
 		} else {
-			setlogColor("#DDD");
-			setlogText("Rosto detectado, vamos tirar uma foto");
-			// funçaõ para extrair o rosto da imagem dectada pela camera
-			console.info(
-				"faceDetected: ",
-				faceDetected,
-				"waitingApiResponse: ",
-				waitingApiResponse
-			);
-			if (faceDetected) {
-				takePicture();
-			} else if (
-				face.leftEyeOpenProbability > 0.8 &&
-				face.rightEyeOpenProbability < 0.8
-			) {
-				//esta redundante takePicture(); // Cmachado: chama a função para tirar a foto da imagem detectada pela camera
+			console.info("faceDir: " + faceDir);
+			if(faceDir != null) {
+				putMessageOnScreen("Rosto detectado", "#DDD", faCrosshairs, true);
+				// funçaõ para extrair o rosto da imagem dectada pela camera
+				console.info(
+					"faceDetected: ",
+					faceDetected,
+					"waitingApiResponse: ",
+					waitingApiResponse
+				);
+				if (faceDetected) {
+					takePicture();
+				} else if (
+					face.leftEyeOpenProbability > 0.8 &&
+					face.rightEyeOpenProbability < 0.8
+				) {
+					//esta redundante takePicture(); // Cmachado: chama a função para tirar a foto da imagem detectada pela camera
+				} else {
+					setFaceDetected(false);
+				}
 			} else {
-				setFaceDetected(false);
+				//force configuration
+				takePicture();
 			}
 		}
 	}
@@ -163,14 +182,12 @@ export function Home() {
 		try {
 			await FileSystem.makeDirectoryAsync(dir, { intermediates: true });
 			console.log("Diretório criado!");
-			setlogText("Configurando primeiro acesso... Favor aguardar...");
-			setlogIcon(faSquareCheck);
-			setlogColor("#17a2b8");
+			putMessageOnScreen("Configurando o primeiro acesso", "#17a2b8",faSquareCheck, true)
 			setFaceDir(dir);
 		} catch (error) {
 			setlogColor("#dc3545")
-			setlogText("Erro ao criar diretório, configuração inicial falhou...");
-			console.error("Erro ao criar o diretório:", error);
+			putMessageOnScreen("Erro ao criar diretório, configuração inicial falhou...");
+			console.error("Erro ao criar o diretório:", error, faSquareCheck, true);
 			setFaceDir(null);
 		}
 	}
@@ -190,7 +207,7 @@ export function Home() {
 						to: newFileUri,
 					});
 					setFaceImage(newFileUri);
-					setlogText("Foto registrada, aguarde autorização...");
+					putMessageOnScreen("Aguarde autorização...", "#09d", faCrosshairs, true);
 					console.log("Imagem salva!");
 				} catch (error) {
 					console.error("Erro ao salvar a imagem:", error);
@@ -208,8 +225,7 @@ export function Home() {
 		const uri = faceImage;
 		let localUri = uri;
 		let filename = localUri ? localUri.split("/").pop() : "";
-		setlogText("Enviando para servidor...");
-		setlogColor("#ffc107");
+		putMessageOnScreen("Enviando para servidor...", "#ffc107", faCrosshairs, true);
 		console.log("enviando para api: " + filename);
 		setwaitingApiResponse(true);
 		try {
@@ -236,7 +252,7 @@ export function Home() {
 						console.error("Erro ao deletar o arquivo:", error);
 					});
 				if (cpf) {
-					setlogText("CPF encontrado: " + cpf);
+					putMessageOnScreen("CPF encontrado: " + cpf);
 					setCPFApiResponse(cpf);
 					setTimeout(() => {
 						setwaitingApiResponse(false);
@@ -251,15 +267,13 @@ export function Home() {
 			console.error(error);
 			setwaitingApiResponse(false);
 			setcountAPIerrors(countAPIerrors + 1);
-			setlogColor("#dc3545")
-			setlogText("erro ao comunicar-se, contagem: " + countAPIerrors)
+			putMessageOnScreen("erro ao comunicar-se, contagem: " + countAPIerrors, "#dc3545")
 		}
 	}
 
 	if (!permission?.granted) {
 		return;
 	}
-	
 
 	return (
 		<View style={styles.container}>
@@ -303,7 +317,8 @@ export function Home() {
 					{ backgroundColor: logColor }
 				]}
 			>
-				<FontAwesomeIcon icon={ logIcon } /><Text style={styles.viewLogText}>{logText}</Text>
+				<FontAwesomeIcon icon={ logIcon } size={38} />
+				<Text style={styles.viewLogText}>{logText}</Text>
 			</View>
 		</View>
 	);

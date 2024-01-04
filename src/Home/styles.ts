@@ -36,4 +36,9 @@ export const styles = StyleSheet.create({
 		width: "100%",
 		zIndex: 20,
 	},
+	fontIcon: {
+		textAlign: "center",
+		fontSize: 40,
+		marginBottom: 50,
+	}
 });
