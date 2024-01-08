@@ -15,24 +15,15 @@ import CircleMask from "./../../assets/circle-mask.png"
 import { styles } from "./styles";
 import { Audio } from 'expo-av';
 import * as Speech from 'expo-speech';
-
-/*FONT AWESOME*/
-import { library } from '@fortawesome/fontawesome-svg-core'
-import { fab } from '@fortawesome/free-brands-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
-import { faMugSaucer } from '@fortawesome/free-solid-svg-icons/faMugSaucer'
-import { faSquareCheck } from '@fortawesome/free-solid-svg-icons/faSquareCheck'
-//import { faMugEmpty } from '@fortawesome/free-solid-svg-icons/faMugEmpty'
-import { faCrosshairs } from '@fortawesome/free-solid-svg-icons/faCrosshairs'
-library.add(fab, faSquareCheck, faMugSaucer, faCrosshairs)
 
 export function Home() {
 	useEffect(() => {
 		requestPermission();
 	}, []);
-	const [logColor, setlogColor] = useState("#DDD");
-	const [logIcon, setlogIcon] = useState(faCrosshairs);
-	const [logText, setlogText] = useState("Inicializando app... Posicione o rosto no centro do círculo");
+	const [logColor, setlogColor] = useState("#17a2b8");
+	const [logIcon, setlogIcon] = useState("gear");
+	const [logText, setlogText] = useState("inicializando app... posicione o rosto no centro do círculo");
 	const [countAPIerrors, setcountAPIerrors] = useState(0);
 	const [faceDetected, setFaceDetected] = useState(false);
 	const [faceDetectedOnCenter, setFaceDetectedOnCenter] = useState(false);
@@ -129,7 +120,7 @@ export function Home() {
 		} else {
 			console.info("faceDir: " + faceDir);
 			if(faceDir != null) {
-				putMessageOnScreen("Rosto detectado", "#DDD", faCrosshairs, true);
+				putMessageOnScreen("rosto detectado", "#DDD", "crosshairs", true);
 				// funçaõ para extrair o rosto da imagem dectada pela camera
 				console.info(
 					"faceDetected: ",
@@ -182,12 +173,12 @@ export function Home() {
 		try {
 			await FileSystem.makeDirectoryAsync(dir, { intermediates: true });
 			console.log("Diretório criado!");
-			putMessageOnScreen("Configurando o primeiro acesso", "#17a2b8",faSquareCheck, true)
+			putMessageOnScreen("configurando o primeiro acesso", "#17a2b8","gear", true)
 			setFaceDir(dir);
 		} catch (error) {
 			setlogColor("#dc3545")
-			putMessageOnScreen("Erro ao criar diretório, configuração inicial falhou...");
-			console.error("Erro ao criar o diretório:", error, faSquareCheck, true);
+			putMessageOnScreen("erro ao criar diretório, configuração inicial falhou...");
+			console.error("erro ao criar o diretório:", error, "gear", true);
 			setFaceDir(null);
 		}
 	}
@@ -207,7 +198,7 @@ export function Home() {
 						to: newFileUri,
 					});
 					setFaceImage(newFileUri);
-					putMessageOnScreen("Aguarde autorização...", "#09d", faCrosshairs, true);
+					putMessageOnScreen("Aguarde autorização...", "#09d", "cloud-arrow-up", true);
 					console.log("Imagem salva!");
 				} catch (error) {
 					console.error("Erro ao salvar a imagem:", error);
@@ -221,11 +212,11 @@ export function Home() {
 
 	async function uploadImage() {
 		console.log("uploadImage()");
-		const apiUri = "http://192.168.5.20:7000/upload";
+		const apiUri = "http://192.168.0.33:7000/upload";
 		const uri = faceImage;
 		let localUri = uri;
 		let filename = localUri ? localUri.split("/").pop() : "";
-		putMessageOnScreen("Enviando para servidor...", "#ffc107", faCrosshairs, true);
+		putMessageOnScreen("Enviando para servidor...", "#ffc107", "cloud-arrow-up", true);
 		console.log("enviando para api: " + filename);
 		setwaitingApiResponse(true);
 		try {
@@ -267,7 +258,7 @@ export function Home() {
 			console.error(error);
 			setwaitingApiResponse(false);
 			setcountAPIerrors(countAPIerrors + 1);
-			putMessageOnScreen("erro ao comunicar-se, contagem: " + countAPIerrors, "#dc3545")
+			putMessageOnScreen("erro ao comunicar-se, contagem: " + countAPIerrors, "#dc3545", "circle-exclamation")
 		}
 	}
 
@@ -317,7 +308,7 @@ export function Home() {
 					{ backgroundColor: logColor }
 				]}
 			>
-				<FontAwesomeIcon icon={ logIcon } size={38} />
+				<FontAwesomeIcon icon={logIcon} size={34} style={styles.viewLogIcon} />
 				<Text style={styles.viewLogText}>{logText}</Text>
 			</View>
 		</View>

@@ -13,6 +13,7 @@ export const styles = StyleSheet.create({
 	},
 	viewLog: {
 		width: "100%",
+		paddingLeft: 40,
 		textAlign: "auto",
 		position: "absolute",
 		rigth: 0,
@@ -22,11 +23,17 @@ export const styles = StyleSheet.create({
 		borderWidth: 2,
 	},
 	viewLogText: {
-		fontSize: 30,
+		fontSize: 32,
 		height: 100,
 		flex: 1,
 		justifyContent: "center",
 		textAlign: "center",
+		paddingTop: 2,
+	},
+	viewLogIcon: {
+		padding: 2,
+		margin: 6,
+		position: "absolute"
 	},
 	splashEnviando: {
 		position: "absolute",
