@@ -17,7 +17,11 @@ import { Audio } from "expo-av";
 import * as Speech from "expo-speech";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { faCrosshairs } from "@fortawesome/free-solid-svg-icons/faCrosshairs";
-import { IconProp } from "@fortawesome/fontawesome-svg-core";
+import {
+	IconLookup,
+	IconName,
+	IconProp,
+} from "@fortawesome/fontawesome-svg-core";
 
 export function Home() {
 	useEffect(() => {
@@ -50,7 +54,7 @@ export function Home() {
 	) => {
 		setlogText(msg);
 		if (color) setlogColor(color);
-		if (icon) setlogIcon(icon);
+		if (icon) setlogIcon(icon); // Cmachado: altera o ícone do log typagem any
 		if (loud) {
 			Speech.speak(msg.toString());
 		}
