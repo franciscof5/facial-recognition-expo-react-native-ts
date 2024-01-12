@@ -22,6 +22,7 @@ import {
 	IconName,
 	IconProp,
 } from "@fortawesome/fontawesome-svg-core";
+import { CompreFace } from "@exadel/compreface-js-sdk";
 
 export function Home() {
 	useEffect(() => {
@@ -238,10 +239,20 @@ export function Home() {
 
 	async function uploadImage() {
 		console.log("uploadImage()");
-		const apiUri = "http://192.168.0.33:7000/upload";
+		const api_key = "453f4a82-6640-4e9b-9307-b0ab684cc2f4";
+		const url = "http://localhost:8000";
+		const port = 8000;
 		const uri = faceImage;
 		let localUri = uri;
 		let filename = localUri ? localUri.split("/").pop() : "";
+		let options = {
+			limit: 1,
+			det_prob_threshold: 0.85,
+			prediction_count: 1,
+			status: true,
+			detect_faces: true,
+		};
+
 		putMessageOnScreen(
 			"Enviando para servidor...",
 			"#ffc107",
@@ -253,17 +264,43 @@ export function Home() {
 		try {
 			if (localUri) {
 				// Cmachado: verifica se a uri não está vazia para fazer o upload
-				const response = await FileSystem.uploadAsync(apiUri, localUri, {
-					fieldName: "file",
+				//  const response = await FileSystem.uploadAsync(url, localUri, {
+				//  	fieldName: "file",
+				//  	httpMethod: "POST",
+				//  	uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+				//  	mimeType: "multipart/form-data",
+
+				//  	parameters: {
+				//  		boundaryString: "---011000010111000001101001",
+				//  	},
+				//  });
+				const response = await FileSystem.uploadAsync(url, localUri, {
 					httpMethod: "POST",
+					fieldName: "file",
 					uploadType: FileSystem.FileSystemUploadType.MULTIPART,
 					mimeType: "multipart/form-data",
-					parameters: {
-						boundaryString: "---011000010111000001101001",
+					headers: {
+						"Content-Type": "multipart/form-data",
+						"x-api-key": "453f4a82-6640-4e9b-9307-b0ab684cc2f4",
 					},
-				});
-				console.log("Response", response.body);
-				let cpf = response.body.slice(44, 56).toString();
+					parameters: {
+						limit: "1",
+						det_prob_threshold: "0.85",
+						prediction_count: "1",
+						status: "true",
+						detect_faces: "true",
+					},
+				})
+					.then((response) => {
+						const data = JSON.parse(response.body);
+						console.log(data);
+					})
+					.catch((error) => {
+						console.error("error", error);
+					});
+
+				console.log("Response", response);
+				let cpf = (response as any).body.slice(44, 56).toString();
 				console.log("cpf", cpf);
 
 				await FileSystem.deleteAsync(localUri)
